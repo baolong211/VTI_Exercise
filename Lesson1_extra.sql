@@ -30,7 +30,7 @@ ID TINYINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
 Name VARCHAR(50) NOT NULL,
 BirthDate DATE NOT NULL,
 Gender ENUM('0', '1', '2'), --0: Male, 1: Female, 2: Unknown
-IsDeleteFlag ENUM('0', '1') --0: Active, 1: Delete
+IsDeleteFlag ENUM('0', '1') DEFAULT 0 --0: Active, 1: Delete
 */
 
 
