@@ -59,31 +59,62 @@ VALUES
     ('Vo Hoai An', '1994-12-28', 'male', '11', '13', '8', '2', 'Bad', 'vohoaian@vtiacademy.edu.vn');
 
 -- Question 2
-SELECT MONTH(Birth_Date) AS Birth_Month, Full_Name, Gender, ET_IQ, ET_Gmath, ET_English, Training_Class, Evaluation_Notes, VTI_Account
-FROM Fresher_management
-WHERE ET_IQ + ET_Gmath >= 20 AND ET_IQ >= 8 AND ET_Gmath >= 8 AND ET_English >= 18	
-GROUP BY Birth_Month, Full_Name, Gender, ET_IQ, ET_Gmath, ET_English, Training_Class, Evaluation_Notes, VTI_Account
+SELECT 
+    MONTH(Birth_Date) AS Birth_Month,
+    Full_Name,
+    Gender,
+    ET_IQ,
+    ET_Gmath,
+    ET_English,
+    Training_Class,
+    Evaluation_Notes,
+    VTI_Account
+FROM
+    Fresher_management
+WHERE
+    ET_IQ + ET_Gmath >= 20 AND ET_IQ >= 8
+        AND ET_Gmath >= 8
+        AND ET_English >= 18
+GROUP BY Birth_Month , Full_Name , Gender , ET_IQ , ET_Gmath , ET_English , Training_Class , Evaluation_Notes , VTI_Account
 ORDER BY Birth_Month ASC;
 
 -- Question 3
-SELECT Full_Name, TIMESTAMPDIFF(YEAR, Birth_Date,CURDATE()) AS Age, Gender, ET_IQ, ET_Gmath, ET_English, Training_Class
-FROM Fresher_management
-ORDER BY LENGTH(Full_Name) DESC 
+SELECT 
+    Full_Name,
+    TIMESTAMPDIFF(YEAR,
+        Birth_Date,
+        CURDATE()) AS Age,
+    Gender,
+    ET_IQ,
+    ET_Gmath,
+    ET_English,
+    Training_Class
+FROM
+    Fresher_management
+ORDER BY LENGTH(Full_Name) DESC
 LIMIT 1;
 
 -- Question 4    
-SELECT *
-FROM Fresher_management 
-WHERE ET_IQ + ET_Gmath >= 20 AND ET_IQ >= 8 AND ET_Gmath >= 8 AND ET_English >= 18;
+SELECT 
+    *
+FROM
+    Fresher_management
+WHERE
+    ET_IQ + ET_Gmath >= 20 AND ET_IQ >= 8
+        AND ET_Gmath >= 8
+        AND ET_English >= 18;
 
 -- Question 5
 DELETE FROM Fresher_management 
-WHERE TraineeID = 3;
+WHERE
+    TraineeID = 3;
 
 -- Question 6
-UPDATE Fresher_management
-SET Training_Class = 2
-WHERE TraineeID = 5;
+UPDATE Fresher_management 
+SET 
+    Training_Class = 2
+WHERE
+    TraineeID = 5;
 
 
 
