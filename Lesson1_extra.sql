@@ -71,10 +71,6 @@ SELECT
     VTI_Account
 FROM
     Fresher_management
-WHERE
-    ET_IQ + ET_Gmath >= 20 AND ET_IQ >= 8
-        AND ET_Gmath >= 8
-        AND ET_English >= 18
 GROUP BY Birth_Month , Full_Name , Gender , ET_IQ , ET_Gmath , ET_English , Training_Class , Evaluation_Notes , VTI_Account
 ORDER BY Birth_Month ASC;
 
