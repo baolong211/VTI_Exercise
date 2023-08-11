@@ -61,18 +61,10 @@ VALUES
 -- Question 2
 SELECT 
     MONTH(Birth_Date) AS Birth_Month,
-    Full_Name,
-    Gender,
-    ET_IQ,
-    ET_Gmath,
-    ET_English,
-    Training_Class,
-    Evaluation_Notes,
-    VTI_Account
+    GROUP_CONCAT(Full_Name) AS Full_Name
 FROM
     Fresher_management
-GROUP BY Birth_Month , Full_Name , Gender , ET_IQ , ET_Gmath , ET_English , Training_Class , Evaluation_Notes , VTI_Account
-ORDER BY Birth_Month ASC;
+GROUP BY Birth_Month;
 
 -- Question 3
 SELECT 

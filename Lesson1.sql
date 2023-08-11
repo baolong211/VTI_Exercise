@@ -39,10 +39,14 @@ CREATE TABLE `Group` (
 
 DROP TABLE IF EXISTS GroupAccount;
 CREATE TABLE GroupAccount (
+    GroupAccountID INT PRIMARY KEY AUTO_INCREMENT,
     GroupID INT,
     AccountID INT,
     JoinDate DATE NOT NULL,
-    PRIMARY KEY (GroupID , AccountID)
+    FOREIGN KEY (GroupID)
+        REFERENCES `Group` (GroupID),
+    FOREIGN KEY (AccountID)
+        REFERENCES `Account` (AccountID)
 );
 
 DROP TABLE IF EXISTS TypeQuestion;
@@ -94,9 +98,13 @@ CREATE TABLE Exam (
 
 DROP TABLE IF EXISTS ExamQuestion;
 CREATE TABLE ExamQuestion (
+    ExamQuestionID INT PRIMARY KEY AUTO_INCREMENT,
     ExamID INT,
     QuestionID INT,
-    PRIMARY KEY (ExamID , QuestionID)
+    FOREIGN KEY (ExamID)
+        REFERENCES Exam (ExamID),
+    FOREIGN KEY (QuestionID)
+        REFERENCES Question (QuestionID)
 );
 
 -- Question 1
@@ -168,13 +176,13 @@ INSERT INTO TypeQuestion (TypeName)
 VALUES
 ('Essay'),
 ('Multiple Choice'),
-('Yes/No'),
+('Essay'),
 ('Multiple Choice'),
 ('Multiple Choice'),
 ('Essay'),
 ('Multiple Choice'),
 ('Multiple Choice'),
-('Yes/No'),
+('Essay'),
 ('Multiple Choice');
 
 INSERT INTO CategoryQuestion (CategoryName)
@@ -256,13 +264,13 @@ SELECT *
 FROM `Account`
 ORDER BY LENGTH(Fullname) DESC
 LIMIT 1;
+-- WHERE LENGTH(Fullname) = SELECT MAX(LENGTH(Fullname)) FROM `Account`
 
 -- Question 5
 SELECT *
 FROM `Account`
-WHERE DepartmentID = 3
-ORDER BY LENGTH(Fullname) DESC
-LIMIT 1;
+WHERE DepartmentID = 3 AND LENGTH(Fullname) = (SELECT MAX(LENGTH(Fullname)) FROM `Account`)
+ORDER BY Fullname DESC;
 
 -- Question 6
 SELECT GroupName
@@ -271,7 +279,7 @@ WHERE CreateDate < '2019-12-20';
 
 -- Question 7
 SELECT QuestionID
-FROM Question
+FROM Answer
 GROUP BY QuestionID
 HAVING COUNT(QuestionID) >= 4;
 
@@ -294,7 +302,7 @@ WHERE DepartmentID = 2;
 -- Question 11
 SELECT Fullname
 FROM `Account`
-WHERE Fullname = 'D%o';
+WHERE (SUBSTRING_INDEX(Fullname, ' ', -1)) LIKE 'D%o';
 
 -- Question 12
 DELETE FROM Exam
@@ -315,6 +323,138 @@ SET
     GroupID = 4
 WHERE
     AccountID = 5;
+    
+-- LESSON 4
+
+-- Exercise 1
+-- Question 1
+SELECT `Account`.Fullname, Department.DepartmentName
+FROM `Account`
+INNER JOIN Department ON `Account`.DepartmentID = Department. DepartmentID;
+
+-- Question 2
+SELECT AccountID, Username, Fullname
+FROM `Account`
+WHERE CreateDate > '2010-12-20';
+
+-- Question 3
+SELECT `Account`.Fullname
+FROM `Account`
+INNER JOIN Position ON `Account`.PositionID = Position.PositionID
+WHERE `Account`.PositionID = 3;
+
+-- Question 4
+SELECT Department.DepartmentName
+FROM Department
+INNER JOIN `Account` ON Department.DepartmentID = `Account`. DepartmentID
+GROUP BY `Account`. DepartmentID
+HAVING COUNT(`Account`. DepartmentID) > 3;
+
+-- Question 5
+SELECT Question.Content, COUNT(ExamQuestion.QuestionID) AS Number_Question
+FROM Question
+INNER JOIN ExamQuestion ON Question.QuestionID = ExamQuestion.QuestionID
+INNER JOIN Exam ON Exam.ExamID = ExamQuestion.ExamID
+GROUP BY Question.Content
+ORDER BY Number_Question DESC
+LIMIT 1;
+
+-- Question 6
+SELECT CategoryQuestion.CategoryID, CategoryQuestion.CategoryName, COUNT(Question.QuestionID) AS Number_Question
+FROM CategoryQuestion
+INNER JOIN Question ON CategoryQuestion.CategoryID = Question.CategoryID
+GROUP BY CategoryQuestion.CategoryID, CategoryQuestion.CategoryName;
+
+-- Question 7
+SELECT Question.QuestionID, Question.Content, COUNT(ExamQuestion.ExamID) AS Number_Exam	
+FROM Question
+INNER JOIN ExamQuestion ON Question.QuestionID = ExamQuestion.QuestionID
+GROUP BY Question.QuestionID, Question.Content;
+
+-- Question 8
+SELECT Question.QuestionID, Question.Content, COUNT(Answer.QuestionID) AS Number_Answer
+FROM Question
+INNER JOIN Answer ON Question.QuestionID = Answer.QuestionID
+GROUP BY Question.QuestionID, Question.Content
+ORDER BY Number_Answer DESC
+LIMIT 1;
+
+-- Question 9
+SELECT `Group`.GroupID, `Group`.GroupName, COUNT(GroupAccount.AccountID) AS Number_Account
+FROM `Group`
+INNER JOIN GroupAccount ON `Group`.GroupID = GroupAccount.GroupID
+GROUP BY `Group`.GroupID;
+
+-- Question 10
+SELECT `Position`.PositionID, `Position`.PositionName, COUNT(`Account`.PositionID) AS Number_Person
+FROM `Position`
+INNER JOIN `Account` ON `Position`.PositionID = `Account`.PositionID
+GROUP BY `Position`.PositionID, `Position`.PositionName
+ORDER BY Number_Person ASC
+LIMIT 1;
+
+-- Question 11
+SELECT `Account`.DepartmentID, Department.DepartmentName, `Position`.PositionName, COUNT(`Account`.PositionID) AS Number_Position
+FROM `Account`
+INNER JOIN Department ON `Account`.DepartmentID = Department.DepartmentID
+INNER JOIN `Position` ON `Account`.PositionID = `Position`.PositionID
+WHERE `Position`.PositionName = 'Dev' OR 'Test' OR 'Scrum Master' OR 'Production Manager'
+GROUP BY `Account`.DepartmentID, Department.DepartmentName, `Position`.PositionName;
+
+-- Question 12
+SELECT Question.QuestionID, Question.Content, TypeQuestion.TypeName, Question.CreatorID, Answer.Content
+FROM Question
+INNER JOIN TypeQuestion ON Question.TypeID = TypeQuestion.TypeID
+INNER JOIN Answer ON Question.QuestionID = Answer.QuestionID;
+
+-- Question 13
+SELECT DISTINCT(TypeQuestion.TypeName), COUNT(Question.TypeID) AS Number_Question
+FROM TypeQuestion
+INNER JOIN Question ON TypeQuestion.TypeID = Question.TypeID
+GROUP BY TypeQuestion.TypeName;
+
+-- Question 14
+SELECT `Group`.GroupName
+FROM `Group`
+INNER JOIN GroupAccount ON `Group`.GroupID = GroupAccount.GroupID
+WHERE `Group`.GroupID NOT IN (SELECT GroupID FROM GroupAccount);
+
+-- Question 15
+-- Question 16
+SELECT Question.Content
+FROM Question
+INNER JOIN Answer ON Question.QuestionID = Answer.QuestionID
+WHERE Question.QuestionID NOT IN (SELECT QuestionID FROM Answer);
+
+-- Exercise 2
+-- Question 17
+SELECT GroupAccount.GroupID, `Account`.Username
+FROM GroupAccount
+INNER JOIN `Account` ON GroupAccount.AccountID = `Account`.AccountID
+WHERE GroupAccount.GroupID = 1
+
+UNION
+
+SELECT GroupAccount.GroupID, `Account`.Username
+FROM GroupAccount
+INNER JOIN `Account` ON GroupAccount.AccountID = `Account`.AccountID
+WHERE GroupAccount.GroupID = 2;
+
+-- Question 18
+SELECT `Group`.GroupID, `Group`.GroupName
+FROM `Group`
+INNER JOIN GroupAccount ON `Group`.GroupID = GroupAccount.GroupID
+GROUP BY GroupAccount.GroupID
+HAVING COUNT(*) > 5
+
+UNION
+
+SELECT `Group`.GroupID, `Group`.GroupName
+FROM `Group`
+INNER JOIN GroupAccount ON `Group`.GroupID = GroupAccount.GroupID
+GROUP BY GroupAccount.GroupID
+HAVING COUNT(*) < 7;
+
 
 
 
