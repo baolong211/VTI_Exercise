@@ -72,7 +72,9 @@ CREATE TABLE Question (
     FOREIGN KEY (CategoryID)
         REFERENCES CategoryQuestion (CategoryID),
     FOREIGN KEY (TypeID)
-        REFERENCES TypeQuestion (TypeID)
+        REFERENCES TypeQuestion (TypeID),
+    FOREIGN KEY (CreatorID)
+        REFERENCES `Account` (AccountID)
 );
 
 DROP TABLE IF EXISTS Answer;
@@ -136,8 +138,8 @@ VALUES
 INSERT INTO `Account` (Email, Username, Fullname, DepartmentID, PositionID, CreateDate)
 VALUES
 ('klaus.hartl@stilbuero.de', 'klaushartl', 'Nguyen Van Anh', '1', '1', '2022-11-20'),
-('tinhocketoanatp@gmail.com', 'tinhocketoan', 'Pham Van Bach', '2', '2', '2020-02-24'),
-('cokhibinhdiep@gmail.com', 'cokhibinhdiep', 'Tran Van Cu', '3', '3', '2021-03-10'),
+('tinhocketoanatp@gmail.com', 'tinhocketoan', 'Pham Van Bach', '1', '2', '2020-02-24'),
+('cokhibinhdiep@gmail.com', 'cokhibinhdiep', 'Tran Van Cu', '1', '3', '2021-03-10'),
 ('hoctaplongan@gmail.com', 'hoctaplongan', 'Phan Van Hung', '4', '4', '2017-10-10'),
 ('l3duym4nh@gmail.com', 'l3duym4nh', 'Nguyen Thi Van', '5', '5', '2019-11-20'),
 ('trung8kool_96@yahoo.com.vn', 'trung8kool', 'Tran Van Trung', '6', '6', '2018-04-20'),
@@ -162,8 +164,8 @@ VALUES
 INSERT INTO GroupAccount (GroupID, AccountID, JoinDate)
 VALUES
 ('1', '1', '2021-01-21'),
-('2', '2', '2021-02-27'),
-('3', '3', '2023-02-20'),
+('2', '1', '2021-02-27'),
+('3', '1', '2023-02-20'),
 ('4', '4', '2022-03-04'),
 ('5', '5', '2019-05-20'),
 ('6', '6', '2018-04-12'),
@@ -340,8 +342,8 @@ WHERE CreateDate > '2010-12-20';
 -- Question 3
 SELECT `Account`.Fullname
 FROM `Account`
-INNER JOIN Position ON `Account`.PositionID = Position.PositionID
-WHERE `Account`.PositionID = 3;
+INNER JOIN `Position` ON `Account`.PositionID = Position.PositionID
+WHERE `Position`.PositionName = 'Dev';
 
 -- Question 4
 SELECT Department.DepartmentName
@@ -354,10 +356,15 @@ HAVING COUNT(`Account`. DepartmentID) > 3;
 SELECT Question.Content, COUNT(ExamQuestion.QuestionID) AS Number_Question
 FROM Question
 INNER JOIN ExamQuestion ON Question.QuestionID = ExamQuestion.QuestionID
-INNER JOIN Exam ON Exam.ExamID = ExamQuestion.ExamID
 GROUP BY Question.Content
 ORDER BY Number_Question DESC
 LIMIT 1;
+/*HAVING COUNT(Question.Content) = (SELECT MAX(Number_Question)
+                                   FROM 
+                                          (SELECT COUNT(Question.QuestionID) AS Number_Question
+                                           FROM ExamQuestion
+                                           INNER JOIN Question ON ExamQuestion.QuestionID = Question.QuestionID
+                                           GROUP BY Question.QuestionID) AS Number_Question)*/
 
 -- Question 6
 SELECT CategoryQuestion.CategoryID, CategoryQuestion.CategoryName, COUNT(Question.QuestionID) AS Number_Question
@@ -377,15 +384,16 @@ FROM Question
 INNER JOIN Answer ON Question.QuestionID = Answer.QuestionID
 GROUP BY Question.QuestionID, Question.Content
 ORDER BY Number_Answer DESC
-LIMIT 1;
-
--- Question 9
-SELECT `Group`.GroupID, `Group`.GroupName, COUNT(GroupAccount.AccountID) AS Number_Account
-FROM `Group`
-INNER JOIN GroupAccount ON `Group`.GroupID = GroupAccount.GroupID
-GROUP BY `Group`.GroupID;
-
--- Question 10
+LIMIT 1SELECT 
+    `Group`.GroupID,
+    `Group`.GroupName,
+    COUNT(GroupAccount.AccountID) AS Number_Account
+FROM
+    GroupAccount
+        RIGHT JOIN
+    `Group` ON GroupAccount.GroupID = `Group`.GroupID
+GROUP BY `Group`.GroupID
+ORDER BY `Group`.GroupIDQuestion 10
 SELECT `Position`.PositionID, `Position`.PositionName, COUNT(`Account`.PositionID) AS Number_Person
 FROM `Position`
 INNER JOIN `Account` ON `Position`.PositionID = `Account`.PositionID
@@ -398,7 +406,7 @@ SELECT `Account`.DepartmentID, Department.DepartmentName, `Position`.PositionNam
 FROM `Account`
 INNER JOIN Department ON `Account`.DepartmentID = Department.DepartmentID
 INNER JOIN `Position` ON `Account`.PositionID = `Position`.PositionID
-WHERE `Position`.PositionName = 'Dev' OR 'Test' OR 'Scrum Master' OR 'Production Manager'
+WHERE `Position`.PositionName = 'Dev' OR `Position`.PositionName = 'Test' OR `Position`.PositionName = 'Scrum Master' OR `Position`.PositionName = 'Production Manager'
 GROUP BY `Account`.DepartmentID, Department.DepartmentName, `Position`.PositionName;
 
 -- Question 12
@@ -455,8 +463,62 @@ INNER JOIN GroupAccount ON `Group`.GroupID = GroupAccount.GroupID
 GROUP BY GroupAccount.GroupID
 HAVING COUNT(*) < 7;
 
+-- LESSON 5
 
+-- Question 1
+CREATE VIEW Employees_List_Sale AS
+SELECT `Account`.AccountID AS EmployeeID, `Account`.Fullname
+FROM `Account`
+INNER JOIN Department ON `Account`.DepartmentID = Department.DepartmentID
+WHERE Department.DepartmentName = 'sales';
 
+-- Question 2
+CREATE VIEW Accounts_List AS
+WITH GroupCount AS (
+    SELECT AccountID, COUNT(AccountID) AS GroupCount
+    FROM GroupAccount
+    GROUP BY AccountID
+),
+MaxGroupCount AS (
+    SELECT MAX(GroupCount) AS MaxGroupCount
+    FROM GroupCount
+)
+SELECT `Account`.AccountID, `Account`.Username, `Account`.Fullname
+FROM `Account`
+INNER JOIN GroupCount ON `Account`.AccountID = GroupCount.AccountID
+INNER JOIN MaxGroupCount ON GroupCount.GroupCount = MaxGroupCount.MaxGroupCount;
+
+-- Question 3
+CREATE VIEW LongQuestions AS
+SELECT *
+FROM Question
+WHERE LENGTH(Content) - LENGTH(REPLACE(Content, ' ', '')) + 1 > 300;
+
+DELETE FROM Question
+WHERE QuestionID IN (SELECT QuestionID FROM LongQuestions);
+
+-- Question 4
+CREATE VIEW Departments_List AS
+WITH DepartmentCount AS (
+	SELECT DepartmentID, COUNT(DepartmentID) AS DepartmentCount
+    FROM `Account`
+    GROUP BY DepartmentID
+),
+MaxDepartmentCount AS (
+	SELECT MAX(DepartmentCount) AS MaxDepartmentCount
+    FROM DepartmentCount
+)
+SELECT Department.DepartmentID, Department.DepartmentName
+FROM Department
+INNER JOIN DepartmentCount ON Department.DepartmentID = DepartmentCount.DepartmentID
+INNER JOIN MaxDepartmentCount ON DepartmentCount.DepartmentCount = MaxDepartmentCount.MaxDepartmentCount;
+
+-- Question 5
+CREATE VIEW Questions_List AS
+SELECT Question.QuestionID, Question.Content
+FROM Question
+INNER JOIN `Account` ON Question.CreatorID = `Account`.AccountID
+WHERE SUBSTRING_INDEX(`Account`.FullName, ' ', 1) = 'Nguyen';
 
 
 

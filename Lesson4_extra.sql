@@ -87,12 +87,12 @@ HAVING COUNT(Employee_Table.Department_Number) > 3;
 
 -- Question 5
 SELECT 
-    Department.Department_Name, Employee_Table.Employee_Name
+    Department.Department_Name, GROUP_CONCAT(Employee_Table.Employee_Name) AS Employee_Name
 FROM
     Department
-        INNER JOIN
+        LEFT JOIN
     Employee_Table ON Department.Department_Number = Employee_Table.Department_Number
-GROUP BY Department.Department_Name , Employee_Table.Employee_Name;
+GROUP BY Department.Department_Name;
 
 -- Question 6
 SELECT 
