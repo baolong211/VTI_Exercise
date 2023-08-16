@@ -466,6 +466,7 @@ HAVING COUNT(*) < 7;
 -- LESSON 5
 
 -- Question 1
+DROP VIEW IF EXISTS Employees_List_Sale;
 CREATE VIEW Employees_List_Sale AS
 SELECT `Account`.AccountID AS EmployeeID, `Account`.Fullname
 FROM `Account`
@@ -473,6 +474,7 @@ INNER JOIN Department ON `Account`.DepartmentID = Department.DepartmentID
 WHERE Department.DepartmentName = 'sales';
 
 -- Question 2
+DROP VIEW IF EXISTS Accounts_List;
 CREATE VIEW Accounts_List AS
 WITH GroupCount AS (
     SELECT AccountID, COUNT(AccountID) AS GroupCount
@@ -489,15 +491,17 @@ INNER JOIN GroupCount ON `Account`.AccountID = GroupCount.AccountID
 INNER JOIN MaxGroupCount ON GroupCount.GroupCount = MaxGroupCount.MaxGroupCount;
 
 -- Question 3
+DROP VIEW IF EXISTS LongQuestions;
 CREATE VIEW LongQuestions AS
 SELECT *
 FROM Question
-WHERE LENGTH(Content) - LENGTH(REPLACE(Content, ' ', '')) + 1 > 300;
+WHERE LENGTH(Content) - LENGTH(REPLACE(Content, ' ', '')) + 1 > 14;
 
 DELETE FROM Question
 WHERE QuestionID IN (SELECT QuestionID FROM LongQuestions);
 
 -- Question 4
+DROP VIEW IF EXISTS Departments_List;
 CREATE VIEW Departments_List AS
 WITH DepartmentCount AS (
 	SELECT DepartmentID, COUNT(DepartmentID) AS DepartmentCount
@@ -514,16 +518,155 @@ INNER JOIN DepartmentCount ON Department.DepartmentID = DepartmentCount.Departme
 INNER JOIN MaxDepartmentCount ON DepartmentCount.DepartmentCount = MaxDepartmentCount.MaxDepartmentCount;
 
 -- Question 5
+DROP VIEW IF EXISTS Questions_List;
 CREATE VIEW Questions_List AS
 SELECT Question.QuestionID, Question.Content
 FROM Question
 INNER JOIN `Account` ON Question.CreatorID = `Account`.AccountID
 WHERE SUBSTRING_INDEX(`Account`.FullName, ' ', 1) = 'Nguyen';
 
+-- Lesson 6
 
+-- Question 1
 
+DROP PROCEDURE IF EXISTS 
+DELIMITER //
+CREATE PROCEDURE Accounts_Department(IN Param_DepartmentName VARCHAR(50))
+BEGIN
+    SELECT `Account`.*
+    FROM `Account`
+    INNER JOIN Department ON `Account`.DepartmentID = Department.DepartmentID
+    WHERE Department.DepartmentName = Param_DepartmentName;
+END //
+DELIMITER ;
 
+CALL Accounts_Department('sales');
 
+-- Question 2
 
+DROP PROCEDURE IF EXISTS 
+DELIMITER //
+CREATE PROCEDURE Count_Accounts_Groups(IN Param_GroupID INT)
+BEGIN
+    SELECT COUNT(AccountID) AS CountAccounts
+    FROM GroupAccount
+    WHERE GroupID = Param_GroupID;
+    
+END //
+DELIMITER ;
 
+CALL Count_Accounts_Groups(1);
+
+-- Question 3
+
+DROP PROCEDURE IF EXISTS Count_Accounts_Groups;
+DELIMITER //
+CREATE PROCEDURE Count_Accounts_Groups(IN Param_GroupID INT)
+BEGIN
+    SELECT COUNT(AccountID) AS CountAccounts
+    FROM GroupAccount
+    WHERE GroupID = Param_GroupID;
+    
+END //
+DELIMITER ;
+
+CALL Count_Accounts_Groups(1);
+
+-- Question 4
+
+DROP PROCEDURE IF EXISTS TypeQuestion_Used;
+DELIMITER //
+CREATE PROCEDURE TypeQuestion_Used()
+BEGIN
+    SELECT TypeID
+    FROM Question
+    GROUP BY TypeID
+    HAVING COUNT(*) = (SELECT MAX(`Count`)
+                       FROM (SELECT COUNT(*) AS `Count`
+							  FROM Question
+                              GROUP BY TypeID) AS T);
+END //
+DELIMITER ;
+
+CALL TypeQuestion_Used();
+
+-- Question 5
+
+SELECT TypeName
+FROM TypeQuestion
+WHERE TypeID = TypeQuestion_Used();
+
+-- Question 6
+
+DROP PROCEDURE IF EXISTS SearchGroup_User;
+DELIMITER //
+CREATE PROCEDURE SearchGroup_User(IN search_string VARCHAR(255))
+BEGIN
+    SELECT GroupName AS Name
+    FROM `Group`
+    WHERE GroupName LIKE CONCAT('%', search_string, '%')
+    UNION
+    SELECT Username AS Name
+    FROM `Account`
+    WHERE Username LIKE CONCAT('%', search_string, '%');
+END //
+DELIMITER ;
+
+CALL SearchGroupOrUser('sales');
+
+-- Question 7
+
+DROP PROCEDURE IF EXISTS AddUser;
+DELIMITER //
+CREATE PROCEDURE AddUser(
+    IN p_fullname NVARCHAR(50),
+    IN p_email VARCHAR(50),
+    IN p_positionID INT,
+    IN p_departmentID INT
+)
+BEGIN
+    DECLARE p_username VARCHAR(30);
+    SET p_username = SUBSTRING_INDEX(p_email, '@gmail', 1);
+    INSERT INTO `Account` (Email, Username, Fullname, DepartmentID, PositionID, CreateDate)
+    VALUES (p_email, p_username, p_fullname, p_departmentID, p_positionID, CURDATE());
+    SELECT CONCAT('Thêm user thành công với ID: ', LAST_INSERT_ID()) AS Result;
+END //
+DELIMITER ;
+
+CALL AddUser('Nguyen Van A', 'baolong@gmail.com', 1, 1);
+
+-- Question 8
+DROP PROCEDURE IF EXISTS GetLongestQuestion;
+DELIMITER //
+CREATE PROCEDURE GetLongestQuestion(IN p_typeName VARCHAR(30))
+BEGIN
+    SELECT Question.Content
+    FROM Question
+    INNER JOIN TypeQuestion ON Question.TypeID = TypeQuestion.TypeID
+    WHERE TypeQuestion.TypeName = p_typeName AND LENGTH(Question.Content) = (
+        SELECT MAX(LENGTH(Content))
+        FROM Question
+        INNER JOIN TypeQuestion ON Question.TypeID = TypeQuestion.TypeID
+        WHERE TypeQuestion.TypeName = p_typeName
+    );
+END //
+DELIMITER ;
+
+CALL GetLongestQuestion('Essay');
+
+CALL GetLongestQuestion('Multiple Choice');
+
+-- Question 9
+
+DROP PROCEDURE IF EXISTS DeleteExam;
+DELIMITER //
+CREATE PROCEDURE DeleteExam(IN p_examID INT)
+BEGIN
+    DELETE FROM Exam
+    WHERE ExamID = p_examID;
+    SELECT CONCAT('Xóa exam thành công với ID: ', p_examID) AS Result;
+END //
+DELIMITER ;
+
+CALL DeleteExam(1);
 
