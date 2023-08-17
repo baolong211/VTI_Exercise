@@ -20,6 +20,7 @@ CREATE TABLE `Account` (
     Email VARCHAR(50) NOT NULL,
     Username VARCHAR(30) NOT NULL,
     Fullname NVARCHAR(50) NOT NULL,
+    Gender ENUM('Male', 'Female', 'Unknown'),
     DepartmentID INT NOT NULL,
     PositionID INT NOT NULL,
     CreateDate DATE NOT NULL,
@@ -135,18 +136,18 @@ VALUES
 ('Accounting Manager'),
 ('Intern');
 
-INSERT INTO `Account` (Email, Username, Fullname, DepartmentID, PositionID, CreateDate)
+INSERT INTO `Account` (Email, Username, Fullname, Gender, DepartmentID, PositionID, CreateDate)
 VALUES
-('klaus.hartl@stilbuero.de', 'klaushartl', 'Nguyen Van Anh', '1', '1', '2022-11-20'),
-('tinhocketoanatp@gmail.com', 'tinhocketoan', 'Pham Van Bach', '1', '2', '2020-02-24'),
-('cokhibinhdiep@gmail.com', 'cokhibinhdiep', 'Tran Van Cu', '1', '3', '2021-03-10'),
-('hoctaplongan@gmail.com', 'hoctaplongan', 'Phan Van Hung', '4', '4', '2017-10-10'),
-('l3duym4nh@gmail.com', 'l3duym4nh', 'Nguyen Thi Van', '5', '5', '2019-11-20'),
-('trung8kool_96@yahoo.com.vn', 'trung8kool', 'Tran Van Trung', '6', '6', '2018-04-20'),
-('sangtaolive@gmail.com', 'sangtaolive', 'Pham Hoang Tan', '7', '7', '2020-02-11'),
-('minhallenit@gmail.com', 'minhallenit', 'Tran Dai Loc', '8', '8', '2017-03-28'),
-('quyrom10293@gmail.com', 'quyrom10293', 'Nguyen Thanh Dat', '9', '9', '2019-05-05'),
-('hieu3364@yahoo.com', 'hieu3364', 'Nguyen Minh Hieu', '10', '10', '2022-01-27');
+('klaus.hartl@stilbuero.de', 'klaushartl', 'Nguyen Van Anh', 'Male', '1', '1', '2022-11-20'),
+('tinhocketoanatp@gmail.com', 'tinhocketoan', 'Pham Van Bach', 'Female', '1', '2', '2020-02-24'),
+('cokhibinhdiep@gmail.com', 'cokhibinhdiep', 'Tran Van Cu', 'Male', '1', '3', '2021-03-10'),
+('hoctaplongan@gmail.com', 'hoctaplongan', 'Phan Van Hung', 'Unknown', '4', '4', '2017-10-10'),
+('l3duym4nh@gmail.com', 'l3duym4nh', 'Nguyen Thi Van', 'Male', '5', '5', '2019-11-20'),
+('trung8kool_96@yahoo.com.vn', 'trung8kool', 'Tran Van Trung', 'Male', '6', '6', '2018-04-20'),
+('sangtaolive@gmail.com', 'sangtaolive', 'Pham Hoang Tan', 'Male', '7', '7', '2020-02-11'),
+('minhallenit@gmail.com', 'minhallenit', 'Tran Dai Loc', 'Male','8', '8', '2017-03-28'),
+('quyrom10293@gmail.com', 'quyrom10293', 'Nguyen Thanh Dat', 'Female', '9', '9', '2019-05-05'),
+('hieu3364@yahoo.com', 'hieu3364', 'Nguyen Minh Hieu', 'Unknown', '10', '10', '2022-01-27');
 
 INSERT INTO `Group` (GroupName, CreatorID, CreateDate)
 VALUES
@@ -529,7 +530,7 @@ WHERE SUBSTRING_INDEX(`Account`.FullName, ' ', 1) = 'Nguyen';
 
 -- Question 1
 
-DROP PROCEDURE IF EXISTS 
+DROP PROCEDURE IF EXISTS Accounts_Department;
 DELIMITER //
 CREATE PROCEDURE Accounts_Department(IN Param_DepartmentName VARCHAR(50))
 BEGIN
@@ -544,21 +545,6 @@ CALL Accounts_Department('sales');
 
 -- Question 2
 
-DROP PROCEDURE IF EXISTS 
-DELIMITER //
-CREATE PROCEDURE Count_Accounts_Groups(IN Param_GroupID INT)
-BEGIN
-    SELECT COUNT(AccountID) AS CountAccounts
-    FROM GroupAccount
-    WHERE GroupID = Param_GroupID;
-    
-END //
-DELIMITER ;
-
-CALL Count_Accounts_Groups(1);
-
--- Question 3
-
 DROP PROCEDURE IF EXISTS Count_Accounts_Groups;
 DELIMITER //
 CREATE PROCEDURE Count_Accounts_Groups(IN Param_GroupID INT)
@@ -570,7 +556,23 @@ BEGIN
 END //
 DELIMITER ;
 
-CALL Count_Accounts_Groups(1);
+CALL Count_Accounts_Groups(2);
+
+-- Question 3
+
+DROP PROCEDURE IF EXISTS CountQuestions;
+DELIMITER //
+CREATE PROCEDURE CountQuestions()
+BEGIN
+    SELECT TypeName, COUNT(*) AS NumQuestions
+    FROM Question
+    INNER JOIN TypeQuestion ON Question.TypeID = TypeQuestion.TypeID
+    WHERE MONTH(CreateDate) = MONTH(CURDATE()) AND YEAR(CreateDate) = YEAR(CURDATE())
+    GROUP BY TypeName;
+END //
+DELIMITER ;
+
+CALL CountQuestions();
 
 -- Question 4
 
@@ -606,13 +608,16 @@ BEGIN
     FROM `Group`
     WHERE GroupName LIKE CONCAT('%', search_string, '%')
     UNION
-    SELECT Username AS Name
-    FROM `Account`
-    WHERE Username LIKE CONCAT('%', search_string, '%');
+    SELECT 
+    Username AS Name
+FROM
+    `Account`
+WHERE
+    Username LIKE CONCAT('%', search_string, '%');
 END //
 DELIMITER ;
 
-CALL SearchGroupOrUser('sales');
+CALL SearchGroup_User('sales');
 
 -- Question 7
 
@@ -636,9 +641,9 @@ DELIMITER ;
 CALL AddUser('Nguyen Van A', 'baolong@gmail.com', 1, 1);
 
 -- Question 8
-DROP PROCEDURE IF EXISTS GetLongestQuestion;
+DROP PROCEDURE IF EXISTS LongestQuestion;
 DELIMITER //
-CREATE PROCEDURE GetLongestQuestion(IN p_typeName VARCHAR(30))
+CREATE PROCEDURE LongestQuestion(IN p_typeName ENUM('Essay', 'Multiple Choice'))
 BEGIN
     SELECT Question.Content
     FROM Question
@@ -652,9 +657,9 @@ BEGIN
 END //
 DELIMITER ;
 
-CALL GetLongestQuestion('Essay');
+CALL LongestQuestion('Essay');
 
-CALL GetLongestQuestion('Multiple Choice');
+CALL LongestQuestion('Multiple Choice');
 
 -- Question 9
 
@@ -664,9 +669,270 @@ CREATE PROCEDURE DeleteExam(IN p_examID INT)
 BEGIN
     DELETE FROM Exam
     WHERE ExamID = p_examID;
-    SELECT CONCAT('Xóa exam thành công với ID: ', p_examID) AS Result;
 END //
 DELIMITER ;
 
 CALL DeleteExam(1);
+
+-- Question 10
+
+-- Question 11
+
+DROP PROCEDURE IF EXISTS DeleteDepartment;
+DELIMITER //
+CREATE PROCEDURE DeleteDepartment(IN departmentName VARCHAR(50))
+BEGIN
+    DECLARE defaultDepartmentID INT;
+    DECLARE deleteDepartmentID INT;
+
+    SET defaultDepartmentID = (SELECT DepartmentID FROM Department WHERE DepartmentName = 'Waiting for Work');
+    SET deleteDepartmentID = (SELECT DepartmentID FROM Department WHERE DepartmentName = departmentName);
+
+    UPDATE `Account` SET DepartmentID = defaultDepartmentID WHERE DepartmentID = deleteDepartmentID;
+    DELETE FROM Department WHERE DepartmentID = deleteDepartmentID;
+END //
+DELIMITER ;
+
+CALL DeleteDepartmentByName('sales');
+
+
+-- Question 12
+
+DROP PROCEDURE IF EXISTS CountQuestions_Month
+DELIMITER //
+CREATE PROCEDURE CountQuestions_Month()
+BEGIN
+    SELECT MONTH(CreateDate) AS 'Month', COUNT(*) AS 'Number of Questions'
+    FROM Question
+    WHERE YEAR(CreateDate) = YEAR(CURDATE())
+    GROUP BY MONTH(CreateDate);
+END //
+DELIMITER ;
+
+CALL CountQuestions_Month();
+
+-- Question 13
+
+-- Lesson 7
+
+-- Question 1
+
+DROP TRIGGER IF EXISTS check_group_create_date;
+DELIMITER //
+CREATE TRIGGER check_group_create_date
+BEFORE INSERT ON `Group`
+FOR EACH ROW
+BEGIN
+    IF NEW.CreateDate < DATE_SUB(CURDATE(), INTERVAL 1 YEAR) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Du lieu nhap vao khong hop le!';
+    END IF;
+END //
+DELIMITER ;
+
+INSERT INTO `Group` (GroupName, CreatorID, CreateDate)
+VALUES ('Group1', '1', '2022-02-11');
+
+-- Question 2
+
+DROP TRIGGER IF EXISTS check_department_sale;
+DELIMITER //
+CREATE TRIGGER check_department_sale
+BEFORE INSERT ON `Account`
+FOR EACH ROW
+BEGIN
+    DECLARE department_name VARCHAR(50);
+    SELECT DepartmentName INTO department_name 
+    FROM Department 
+    WHERE DepartmentID = NEW.DepartmentID;
+    IF department_name = 'Sale' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Department "Sale" cannot add more user';
+    END IF;
+END //
+DELIMITER ;
+
+-- Question 3
+
+DROP TRIGGER IF EXISTS check_group_user_limit;
+DELIMITER //
+CREATE TRIGGER check_group_user_limit
+BEFORE INSERT ON `Group`
+FOR EACH ROW
+BEGIN
+    DECLARE user_count INT;
+    SELECT COUNT(*) INTO user_count 
+    FROM `Group` 
+    WHERE GroupID = NEW.GroupID;
+    IF user_count >= 5 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Group cannot have more than 5 users';
+    END IF;
+END //
+DELIMITER ;
+
+-- Question 4
+
+DROP TRIGGER IF EXISTS check_exam_question_limit;
+DELIMITER //
+CREATE TRIGGER check_exam_question_limit
+BEFORE INSERT ON ExamQuestion
+FOR EACH ROW
+BEGIN
+    DECLARE question_count INT;
+    SELECT COUNT(*) INTO question_count FROM ExamQuestion WHERE ExamID = NEW.ExamID;
+    IF question_count >= 10 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Bai thi co nhieu nhat 10 cau hoi';
+    END IF;
+END //
+DELIMITER ;
+
+-- Question 5 
+
+DELIMITER //
+CREATE TRIGGER check_account_delete
+BEFORE DELETE ON `Account`
+FOR EACH ROW
+BEGIN
+    IF OLD.Email = 'admin@gmail.com' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Khong the xoa tai khoan admin';
+    END IF;
+END //
+DELIMITER ;
+
+-- Question 6
+
+INSERT INTO Department (DepartmentName)
+VALUES('waiting Department');
+
+DROP TRIGGER IF EXISTS check_insert_account;
+DELIMITER //
+CREATE TRIGGER check_insert_account
+BEFORE INSERT ON `Account`
+FOR EACH ROW
+BEGIN
+    DECLARE waiting_department_id INT;
+ SELECT 
+    DepartmentID
+INTO waiting_department_id FROM
+    Department
+WHERE
+    DepartmentName = 'waiting Department';
+    IF NEW.DepartmentID IS NULL THEN
+        SET NEW.DepartmentID = waiting_department_id;
+    END IF;
+END //
+DELIMITER ;
+
+-- Question 7
+
+DROP TRIGGER IF EXISTS check_answer_limit;
+DELIMITER //
+CREATE TRIGGER check_answer_limit
+BEFORE INSERT ON Answer
+FOR EACH ROW
+BEGIN
+    DECLARE answer_count INT;
+    DECLARE correct_answer_count INT;
+    SELECT COUNT(*), COUNT(isCorrect) INTO answer_count, correct_answer_count 
+    FROM Answer 
+    WHERE QuestionID = NEW.QuestionID;
+    IF answer_count >= 4 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Question cannot have more than 4 answers';
+	END IF;
+    IF correct_answer_count >= 2 AND NEW.isCorrect = 1 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Question cannot have more than 2 correct answers';
+    END IF;
+END //
+DELIMITER ;
+
+-- Question 8
+
+DROP TRIGGER IF EXISTS set_gender_value;
+DELIMITER //
+CREATE TRIGGER set_gender_value
+BEFORE INSERT ON `Account`
+FOR EACH ROW
+BEGIN
+    SET NEW.Gender = CASE NEW.Gender
+        WHEN 'nam' THEN 'Male'
+        WHEN 'nữ' THEN 'Female'
+        WHEN 'chưa xác định' THEN 'Unknown'
+        ELSE NEW.Gender
+    END;
+END //
+DELIMITER ;
+
+-- Question 9
+
+DROP TRIGGER IF EXISTS check_exam_delete;
+DELIMITER //
+CREATE TRIGGER check_exam_delete
+BEFORE DELETE ON Exam
+FOR EACH ROW
+BEGIN
+    IF DATEDIFF(CURDATE(), CreateDate) < 2 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Khong the xoa bai thi moi duoc tao 2 ngay';
+    END IF;
+END //
+DELIMITER ;
+
+-- Question 10
+
+DROP TRIGGER IF EXISTS check_question_update;
+DROP TRIGGER IF EXISTS check_question_delete;
+DELIMITER //
+CREATE TRIGGER check_question_update
+BEFORE UPDATE ON Question
+FOR EACH ROW
+BEGIN
+    DECLARE exam_count INT;
+    SELECT COUNT(*) INTO exam_count FROM ExamQuestion WHERE QuestionID = OLD.QuestionID;
+    IF exam_count > 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Khong the update cau hoi khi da co trong bai thi!';
+    END IF;
+END //
+
+CREATE TRIGGER check_question_delete
+BEFORE DELETE ON Question
+FOR EACH ROW
+BEGIN
+    DECLARE exam_count INT;
+    SELECT COUNT(*) INTO exam_count FROM ExamQuestion WHERE QuestionID = OLD.QuestionID;
+    IF exam_count > 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Khong the xoa cau hoi khi da co trong bai thi!';
+    END IF;
+END //
+DELIMITER ;
+
+-- Question 11
+
+SELECT ExamID, `Code`, Title, CategoryID,
+    CASE
+        WHEN Duration <= 30 THEN 'Short time'
+        WHEN Duration > 30 AND Duration <= 60 THEN 'Medium time'
+        ELSE 'Long time'
+    END AS DurationText,
+    CreatorID, CreateDate
+FROM Exam;
+
+-- Question 12
+
+SELECT `Group`.GroupID, `Group`.GroupName, COUNT(AccountID) AS UserCount,
+    CASE
+        WHEN COUNT(AccountID) <= 5 THEN 'few'
+        WHEN COUNT(AccountID) > 5 AND COUNT(AccountID) <= 20 THEN 'normal'
+        ELSE 'higher'
+    END AS the_number_user_amount
+FROM `Group`
+INNER JOIN GroupAccount ON `Group`.GroupID = GroupAccount.GroupID
+GROUP BY `Group`.GroupID, `Group`.GroupName;
+
+-- Question 13
+
+SELECT Department.DepartmentID, Department.DepartmentName,
+    CASE
+        WHEN COUNT(Account.AccountID) = 0 THEN 'Không có User'
+        ELSE COUNT(Account.AccountID)
+    END AS UserCount
+FROM Department
+LEFT JOIN `Account` ON Department.DepartmentID = `Account`.DepartmentID
+GROUP BY Department.DepartmentID, Department.DepartmentName;
 

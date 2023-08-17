@@ -93,7 +93,7 @@ BEGIN
     DELETE FROM Projects WHERE ProjectCompletedOn IS NOT NULL AND ProjectCompletedOn < DATE_SUB(CURDATE(), INTERVAL 3 MONTH);
     SET project_remove_count = (SELECT COUNT(*)
                                FROM Projects 
-                               WHERE ProjectCompletedOn < DATE_SUB(CURDATE(), INTERVAL 3 MONTH));
+                               WHERE ProjectCompletedOn IS NOT NULL AND ProjectCompletedOn < DATE_SUB(CURDATE(), INTERVAL 3 MONTH));
 	SELECT CONCAT('Removed', project_remove_count, 'projects records');
 END //
 DELIMITER ;
@@ -108,7 +108,7 @@ CREATE PROCEDURE CurrentModules(IN Param_ProjectID TINYINT UNSIGNED)
 BEGIN
 	SELECT ModuleID, ProjectModulesDescription
     FROM Project_Modules
-    WHERE ProjectID = Par_ProjectID AND ProjectModulesCompletedOn IS NULL;
+    WHERE ProjectID = Param_ProjectID AND ProjectModulesCompletedOn IS NULL;
 END //
 DELIMITER ;
 
@@ -125,9 +125,33 @@ BEGIN
 	DECLARE EmployeeName NVARCHAR(50);
 	SELECT CONCAT(EmployeeLastName, ' ', EmployeeFirstName) INTO EmployeeName
     FROM Employee
-    WHERE EmployeeID NOT IN (SELECT EmployeeID FROM Work_Done);
+    WHERE Param_EmployeeID = EmployeeID AND Param_EmployeeID NOT IN (SELECT DISTINCT(EmployeeID) FROM Work_Done);
     RETURN EmployeeName;
 END //
 DELIMITER ;
 
-SELECT EmployeeJoined(4);
+SELECT EmployeeJoined(2);
+
+-- Extra Assignment 7
+
+DROP TRIGGER IF EXISTS check_project_modules_date;
+DELIMITER //
+CREATE TRIGGER check_project_modules_date
+BEFORE INSERT ON Project_Modules
+FOR EACH ROW
+BEGIN
+    DECLARE project_start_date DATETIME;
+    DECLARE project_completed_on DATETIME;
+    SELECT ProjectStartDate, ProjectCompletedOn INTO project_start_date, project_completed_on 
+    FROM Projects 
+    WHERE ProjectID = NEW.ProjectID;
+    IF NEW.ProjectModulesDate < project_start_date OR (project_completed_on IS NOT NULL AND NEW.ProjectModulesCompletedOn > project_completed_on) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Du lieu nhap vao khong hop le!';
+    END IF;
+END //
+DELIMITER ;
+
+INSERT INTO Project_Modules (ProjectID, EmployeeID, ProjectModulesDate, ProjectModulesCompletedOn, ProjectModulesDescription)
+VALUES (1, 2, '2019-06-01', '2019-08-26', 'Làm đúng hạn');
+
+  
