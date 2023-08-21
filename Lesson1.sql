@@ -745,7 +745,7 @@ BEGIN
     FROM Department 
     WHERE DepartmentID = NEW.DepartmentID;
     IF department_name = 'Sale' THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Department "Sale" cannot add more user';
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Khong the them nguoi dung vao phong ban sales';
     END IF;
 END //
 DELIMITER ;
@@ -777,7 +777,9 @@ BEFORE INSERT ON ExamQuestion
 FOR EACH ROW
 BEGIN
     DECLARE question_count INT;
-    SELECT COUNT(*) INTO question_count FROM ExamQuestion WHERE ExamID = NEW.ExamID;
+    SELECT COUNT(*) INTO question_count 
+    FROM ExamQuestion 
+    WHERE ExamID = NEW.ExamID;
     IF question_count >= 10 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Bai thi co nhieu nhat 10 cau hoi';
     END IF;
@@ -851,15 +853,21 @@ CREATE TRIGGER set_gender_value
 BEFORE INSERT ON `Account`
 FOR EACH ROW
 BEGIN
-    SET NEW.Gender = CASE NEW.Gender
-        WHEN 'nam' THEN 'Male'
-        WHEN 'nữ' THEN 'Female'
-        WHEN 'chưa xác định' THEN 'Unknown'
-        ELSE NEW.Gender
-    END;
+-- 	-- IF NEW.Gender NOT IN ('Male', 'Female', 'Unknown', 'nam', 'nữ', 'chưa xác định')
+-- --     THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Gia tri khong hop le!';
+-- --     END IF;
+--     -- SET NEW.Gender = CASE NEW.Gender
+-- --         WHEN 'nam' THEN 'Male'
+-- --         WHEN 'nữ' THEN 'Female'
+-- --         WHEN 'chưa xác định' THEN 'Unknown'
+-- --         ELSE NEW.Gender
+-- --     END;
 END //
 DELIMITER ;
 
+INSERT INTO `Account` (Email, Username, Fullname, Gender, DepartmentID, PositionID, CreateDate)
+VALUES ('klaus.hartl@stilb222uero.de', 'klaus2hartl', 'Nguyen Van Anhh', 'nam', '2', '3', '2022-11-20');
+SELECT * FROM `Account`;
 -- Question 9
 
 DROP TRIGGER IF EXISTS check_exam_delete;
@@ -935,4 +943,5 @@ SELECT Department.DepartmentID, Department.DepartmentName,
 FROM Department
 LEFT JOIN `Account` ON Department.DepartmentID = `Account`.DepartmentID
 GROUP BY Department.DepartmentID, Department.DepartmentName;
+
 
